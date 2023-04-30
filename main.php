@@ -35,7 +35,7 @@
    	  overflow-x: auto;
 	  font-family: 'formula1-display-regular-regular';
 	  width: 100%;
-	  float: right;  
+	  float: right;
 	}
 </style>
  </head>
@@ -51,10 +51,15 @@ $mysqli= new mysqli('localhost','root','','formula1');
 $usuario= $_SESSION['usuario'];
 
 //Recuperar circuito y sesiones activas
-$sql = "SELECT calendar.circuitId,sessioncalendar.sessionId, circuits.gpName, circuits.circuitName, seasons.year FROM seasons INNER JOIN calendar ON calendar.year=seasons.year INNER JOIN sessioncalendar ON sessioncalendar.year=calendar.year and sessioncalendar.circuitId=calendar.circuitId INNER JOIN circuits ON circuits.circuitId=calendar.circuitId WHERE seasons.isActive = '1' and calendar.isActive='1'";
+$sql = "SELECT calendar.circuitId,sessioncalendar.sessionId, circuits.gpName, circuits.circuitName, seasons.year, sessioncalendar.isActive FROM seasons INNER JOIN calendar ON calendar.year=seasons.year INNER JOIN sessioncalendar ON sessioncalendar.year=calendar.year and sessioncalendar.circuitId=calendar.circuitId INNER JOIN circuits ON circuits.circuitId=calendar.circuitId WHERE seasons.isActive = '1' and calendar.isActive='1'";
 $resultado=$mysqli->query($sql);
 $hayResultados = true; 
 $haySprintRace = false;
+ 
+$quaClosed = false;
+$racClosed = false;
+$qusClosed = false;
+$rasClosed = false;
 $circuitName = "";
 while ($hayResultados==true){
 	$fila = $resultado->fetch_assoc();
@@ -63,7 +68,20 @@ while ($hayResultados==true){
 		 $_SESSION['circuitId'] = $fila["circuitId"];
 		 $year = $fila["year"];  
 		 $circuitName = $fila["gpName"] . " - " . $fila["circuitName"]; 
+		 if($fila["sessionId"]=='QUA' && $fila["isActive"]==0){
+			$quaClosed = true; 
+		 }
+		 if($fila["sessionId"]=='RAC' && $fila["isActive"]==0){
+			$racClosed = true; 
+		 }
+		 if($fila["sessionId"]=='QUS' && $fila["isActive"]==0){
+			$haySprintRace = true;
+			$qusClosed =true; 
+		 }
 		 if($fila["sessionId"]=='RAS'){
+			 if( $fila["isActive"]==0){
+				$rasClosed =true; 
+			 }
 			$haySprintRace = true; 
 		 }
 	}else {
@@ -164,6 +182,15 @@ function createBetRows($mysqli,$event){	for($pos=1;$pos<12;$pos++){
         echo "</div>";
     }	
 }
+	
+	if(isset($_POST['Calcular'])) {
+			//require__DIR__ . '/Calcula.php';
+			//calcula
+			echo $_POST['sessionId'];
+			echo  $_POST['circuitId'];
+			
+            //alert();
+        }
 	?>
 
 <div align="center">
@@ -215,14 +242,47 @@ function createBetRows($mysqli,$event){	for($pos=1;$pos<12;$pos++){
                         <div class="panelMiApuesta">
                                       <h3 style="font-weight: bold;" >Mi Apuesta</h3><br>
                                       <form id="form1" name="form1" method="post" action="apostar.php"> 
-                                       <?php echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">"; ?>
-                                       <?php echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">"; ?>
+                                       <?php echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+                                        echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">"; ?>
                                       <input type="hidden" id="sessionIdField" name="sessionId" value="QUA"> 
-                                      <?php createDriversCombo($mysqli); ?>
-                                <br>
-                                 <label for="Submit"></label>
-                                    <input type="submit" name="Submit" value="Apostar" id="Submit" />
-                                </form> 
+                                      <?php createDriversCombo($mysqli);
+									 echo "<br>";
+									  if(!$quaClosed){
+										  echo "<label for=\"Submit\"></label>";
+									 	  echo "<input type=\"submit\" name=\"Submit\" value=\"Apostar\" id=\"Submit\"/>"; 
+									  }?>
+									 </form>
+                                     
+									 <?php
+									 if(!$quaClosed){
+										 echo "<form id=\"formCerrar\" name=\"formCerrar\" method=\"post\" action=\"cerrarApuesta.php\"> ";
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"0\">"; 
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"QUA\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Close\"></label>";
+										 echo" <input type=\"submit\" name=\"Close\" value=\"Cerrar Apuesta\" id=\"Close\"/>";
+										 echo "</form>"; 
+									 } else{
+										 echo "<form id=\"formAbrir\" name=\"formAbrir\" method=\"post\" action=\"cerrarApuesta.php\"> "; 
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"1\">";
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"QUA\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Open\"></label>";
+										 echo" <input type=\"submit\" name=\"Open\" value=\"Abrir Apuesta\" id=\"Open\"/>";
+										 echo "</form>"; 
+
+									 }
+									  
+										 echo "<form id=\"formCerrar\" name=\"formCerrar\" method=\"post\"> ";
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"0\">"; 
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"QUA\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Close\"></label>";
+										 echo" <input type=\"submit\" name=\"Calcular\" value=\"Calcular\" id=\"Close\"/>";
+										 echo "</form>";?>
                       </div>
                       </div>
                       <div class="col-md-8">
@@ -249,15 +309,41 @@ function createBetRows($mysqli,$event){	for($pos=1;$pos<12;$pos++){
                  <div class="row">
                      <div class="col-xs-4 col-md-4">
                         <div class="panelMiApuesta">
-                                      <h3 style="font-weight: bold;" >Mi Apuesta</h3><br>
+                                      <h3 style>Mi Apuesta</h3><br><br>
                                       <form id="form1" name="form1" method="post" action="apostar.php"> 
+                                       <?php echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+                                        echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">"; ?>
                                       <input type="hidden" id="sessionIdField" name="sessionId" value="RAC"> 
-                                      <?php createDriversCombo($mysqli); ?>
-                                <br>
-                                 <label for="Submit"></label>
-                                    <input type="submit" name="Submit" value="Apostar" id="Submit" />
-                                </form> 
-                      </div>
+                                      <?php createDriversCombo($mysqli);
+									 echo "<br>";
+									  if(!$racClosed){
+										  echo "<label for=\"Submit\"></label>";
+									 	  echo "<input type=\"submit\" name=\"Submit\" value=\"Apostar\" id=\"Submit\"/>"; 
+									  }?>
+									 </form>
+                                     
+									 <?php
+									 if(!$racClosed){
+										 echo "<form id=\"formCerrar\" name=\"formCerrar\" method=\"post\" action=\"cerrarApuesta.php\"> ";
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"0\">"; 
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"RAC\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Close\"></label>";
+										 echo" <input type=\"submit\" name=\"Close\" value=\"Cerrar Apuesta\" id=\"Close\"/>";
+										 echo "</form>"; 
+									 } else{
+										 echo "<form id=\"formAbrir\" name=\"formAbrir\" method=\"post\" action=\"cerrarApuesta.php\"> "; 
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"1\">";
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"RAC\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Open\"></label>";
+										 echo" <input type=\"submit\" name=\"Open\" value=\"Abrir Apuesta\" id=\"Open\"/>";
+										 echo "</form>"; 
+
+									 }?>
+                      </div>>
                       </div>
                       <div class="col-md-8">
                             <div class="panelGrid">
@@ -276,23 +362,49 @@ function createBetRows($mysqli,$event){	for($pos=1;$pos<12;$pos++){
      </div>
     <!-- Capa Apuesta Clasificacion Sprint -->
 	<div color:#2EFEC8;font-weight: bold;font-size: 20px;" class="tab-pane fade" id="ApuestaClasificacionSprint" role="tabpanel" aria-labelledby="nav-home-tab"> 
-            <h3 style="font-size: 40px; font-weight: bold; text-align: center;" >Carrera</h3><br>
+            <h3 style="font-size: 40px; font-weight: bold; text-align: center;" >Carrera Sprint</h3><br>
                 <!-- Panel Apuesta-->
             <div class="container-fluid" style="width:100%;">    
                  <div class="row">
-                     <div class="col-xs-4 col-md-4">
+                     <div class="col-xs-1 col-md-4">
                         <div class="panelMiApuesta">
-                                      <h3 style="font-weight: bold;" >Mi Apuesta</h3><br>
+                                      <h3 style>Mi Apuesta</h3><br>
                                       <form id="form1" name="form1" method="post" action="apostar.php"> 
-                                      <input type="hidden" id="sessionIdField" name="sessionId" value="QUS"> 
-                                      <?php createDriversCombo($mysqli); ?>
-                                <br>
-                                 <label for="Submit"></label>
-                                    <input type="submit" name="Submit" value="Apostar" id="Submit" />
-                                </form> 
+                                       <?php echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+                                        echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">"; ?>
+                                      <input type="hidden" id="sessionIdField" name="sessionId" value="QUA"> 
+                                      <?php createDriversCombo($mysqli);
+									 echo "<br>";
+									  if(!$qusClosed){
+										  echo "<label for=\"Submit\"></label>";
+									 	  echo "<input type=\"submit\" name=\"Submit\" value=\"Apostar\" id=\"Submit\"/>"; 
+									  }?>
+									 </form>
+                                     
+									 <?php
+									 if(!$qusClosed){
+										 echo "<form id=\"formCerrar\" name=\"formCerrar\" method=\"post\" action=\"cerrarApuesta.php\"> ";
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"0\">"; 
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"QUS\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Close\"></label>";
+										 echo" <input type=\"submit\" name=\"Close\" value=\"Cerrar Apuesta\" id=\"Close\"/>";
+										 echo "</form>"; 
+									 } else{
+										 echo "<form id=\"formAbrir\" name=\"formAbrir\" method=\"post\" action=\"cerrarApuesta.php\"> "; 
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"1\">";
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"QUS\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Open\"></label>";
+										 echo" <input type=\"submit\" name=\"Open\" value=\"Abrir Apuesta\" id=\"Open\"/>";
+										 echo "</form>"; 
+
+									 }?>
                       </div>
                       </div>
-                      <div class="col-md-8">
+                      <div class="col-xs-2 col-md-8">
                             <div class="panelGrid">
                                 <div class="container-fluid" style="text-align:center;">
                                     <div class="row" name="header">
@@ -313,20 +425,46 @@ function createBetRows($mysqli,$event){	for($pos=1;$pos<12;$pos++){
 
 	<!-- Capa Apuesta Clasificacion -->
   	<div color:#2EFEC8;font-weight: bold;font-size: 20px;" class="tab-pane fade" id="ApuestaClasificacion" role="tabpanel" aria-labelledby="nav-home-tab"> 
-            <h3 style="font-size: 40px; font-weight: bold; text-align: center;" >Clasificación</h3><br>
+            <h3 style="font-size: 40px; font-weight: bold; text-align: center;" >Clasificación Sprint</h3><br>
                 <!-- Panel Apuesta-->
             <div class="container-fluid" style="width:100%;">    
                  <div class="row">
                      <div class="col-xs-4 col-md-4">
                         <div class="panelMiApuesta">
-                                      <h3 style="font-weight: bold;" >Mi Apuesta</h3><br>
+                                      <h3 style>Mi Apuesta</h3><br>
                                       <form id="form1" name="form1" method="post" action="apostar.php"> 
-                                      <input type="hidden" id="sessionIdField" name="sessionId" value="QUA"> 
-                                      <?php createDriversCombo($mysqli); ?>
-                                <br>
-                                 <label for="Submit"></label>
-                                    <input type="submit" name="Submit" value="Apostar" id="Submit" />
-                                </form> 
+                                       <?php echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+                                        echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">"; ?>
+                                      <input type="hidden" id="sessionIdField" name="sessionId" value="RAS"> 
+                                      <?php createDriversCombo($mysqli);
+									 echo "<br>";
+									  if(!$rasClosed){
+										  echo "<label for=\"Submit\"></label>";
+									 	  echo "<input type=\"submit\" name=\"Submit\" value=\"Apostar\" id=\"Submit\"/>"; 
+									  }?>
+									 </form>
+                                     
+									 <?php
+									 if(!$rasClosed){
+										 echo "<form id=\"formCerrar\" name=\"formCerrar\" method=\"post\" action=\"cerrarApuesta.php\"> ";
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"0\">"; 
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"QUA\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Close\"></label>";
+										 echo" <input type=\"submit\" name=\"Close\" value=\"Cerrar Apuesta\" id=\"Close\"/>";
+										 echo "</form>"; 
+									 } else{
+										 echo "<form id=\"formAbrir\" name=\"formAbrir\" method=\"post\" action=\"cerrarApuesta.php\"> "; 
+										 echo "<input type=\"hidden\" id=\"abrirCerrarField\" name=\"abrirCerrar\" value=\"1\">";
+										 echo "<input type=\"hidden\" id=\"circuitIdField\" name=\"circuitId\" value=\"".$circuitId."\">";
+										 echo "<input type=\"hidden\" id=\"sessionIdField\" name=\"sessionId\" value=\"RAS\">"; 
+										 echo "<input type=\"hidden\" id=\"yearField\" name=\"year\" value=\"".$year."\">";
+										 echo "<label for=\"Open\"></label>";
+										 echo" <input type=\"submit\" name=\"Open\" value=\"Abrir Apuesta\" id=\"Open\"/>";
+										 echo "</form>"; 
+
+									 }?>
                       </div>
                       </div>
                       <div class="col-md-8">

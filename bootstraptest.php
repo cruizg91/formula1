@@ -26,9 +26,17 @@ margin: 10px;
 <?php
 $array = array(0 => 'blue', 1 => 'red', 2 => 'green', 3 => 'red');
 
-$key = array_search('green', $array); // $key = 2;
-$key = array_search('red', $array);   // $key = 1;
-echo $key;
+$i = array_search('red', $array);   
+          // int(1)
+echo ($i !== false) ? $i : -1;     // 1
+
+$i = array_search('blue', $array);          // int(0)
+echo ($i !== false) ? $i : -1;     // 0      // CORRECT
+
+$i = array_search('blueee', $array);
+                  // bool(false)
+echo ($i !== false) ? $i : -1;     // -1, i.e. not found
+
 ?>
 </body>
 </html>

@@ -29,11 +29,15 @@ $p8 = $_POST["select8"];
 $p9 = $_POST["select9"];   
 $p10 = $_POST['select10'];     
 $p11 = $_POST['select11'];
+$values=array(0=>$p1, 1=>$p2, 2=>$p3, 3=>$p4, 4=>$p5, 5=>$p6, 6=>$p7, 7=>$p8, 8=>$p9, 9=>$p10, 10=>$p11);
 
 $sql = "SELECT bets.userId FROM bets INNER JOIN sessioncalendar ON sessioncalendar.year = bets.year and sessioncalendar.circuitId= bets.circuitId and sessioncalendar.sessionId=bets.sessionId and sessioncalendar.isActive=1 WHERE bets.userId='$usuario' and bets.circuitId='$circuitId' and bets.sessionId='$sessionId'  and bets.year=(select year from seasons where isActive=1)";
 
-
 $hayResultados=true;
+if(count(array_keys($values, $p1))>1 || count(array_keys($values, $p2))>1 || count(array_keys($values, $p3))>1 || count(array_keys($values, $p4))>1 || count(array_keys($values, $p5))>1 || count(array_keys($values, $p6))>1 || count(array_keys($values, $p7))>1 || count(array_keys($values, $p8))>1 || count(array_keys($values, $p9))>1 || count(array_keys($values, $p10))>1 || count(array_keys($values, $p11))>1){
+	$hayResultados=false;	
+}
+
 $resultado=$mysqli->query($sql);
 while ($hayResultados==true){
 	$fila = $resultado->fetch_assoc();

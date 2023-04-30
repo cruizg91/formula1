@@ -14,7 +14,7 @@ if($resultado=$mysqli->query($sql)){
 		  session_start();  
 		  //Almacenamos el nombre de usuario en una variable de sesión usuario
 		  $_SESSION['usuario'] = $usuario;  
-		  
+		  $_SESSION['isAdmin'] = $isAdmin;  
 		  header("Location: main.php");
 		}else{
 			header("Location: index.html");
