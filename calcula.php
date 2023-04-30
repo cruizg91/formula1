@@ -6,23 +6,9 @@
 
 <body>
 	<?php
-function calcula($year,$sessionId,$circuitId){
+function calcula($year,$sessionId,$circuitId,$p1,$p2,$p3,$p4,$p5,$p6,$p7,$p8,$p9,$p10,$p11){
 	$mysqli= new mysqli('localhost','root','','formula1');
 	
-	$year = $_POST["year"];   
-	$sessionId = $_POST['sessionId'];
-	$circuitId = $_POST["circuitId"];	
-	$p1 = $_POST["select1"];   
-	$p2 = $_POST['select2'];
-	$p3 = $_POST["select3"];
-	$p4 = $_POST["select4"];   
-	$p5 = $_POST['select5'];
-	$p6 = $_POST["select6"];   
-	$p7 = $_POST['select7'];
-	$p8 = $_POST["select8"];
-	$p9 = $_POST["select9"];   
-	$p10 = $_POST['select10'];     
-	$p11 = $_POST['select11'];
 	$pArray = array(1 => $p1, 2 => $p2, 3 => $p3, 4=> $p4, 5 => $p5, 6 => $p6, 7 => $p7, 8 => $p8, 9 => $p9, 10 => $p10, 11 => $p11);
 	
 	//valores
@@ -55,8 +41,8 @@ function calcula($year,$sessionId,$circuitId){
 	
 	
 	//inserta en la tabla de results
-	$sql="INSERT INTO bets(circuitId,sessionId,year,1th,2th,3th,4th,5th,6th,7th,8th,9th,10th,11th) VALUES ('$circuitId','$sessionId','$year','$p1','$p2','$p3','$p4','$p5','$p6','$p7','$p8','$p9','$p10','$p11')";
-	//$resultado=$mysqli->query($sql);
+	$sql="INSERT INTO results(circuitId,sessionId,year,1th,2th,3th,4th,5th,6th,7th,8th,9th,10th,11th) VALUES ('$circuitId','$sessionId','$year','$p1','$p2','$p3','$p4','$p5','$p6','$p7','$p8','$p9','$p10','$p11') ON DUPLICATE KEY UPDATE 1th='$p1',2th='$p2',3th='$p3',4th='$p4',5th='$p5',6th='$p6',7th='$p7',8th='$p8',9th='$p9',10th='$p10',11th='$p11'";
+	$resultado=$mysqli->query($sql);
 	
 	//recupera las apuestas de los usuarios
 	$sql= "SELECT users.userId, 1th,2th,3th,4th,5th,6th,7th,8th,9th,10th,11th,extrapoints FROM users LEFT JOIN bets ON users.userId=bets.userId and sessionId='$sessionId' and circuitId='$circuitId' and year='$year' order by userOrder ASC";
@@ -70,7 +56,6 @@ function calcula($year,$sessionId,$circuitId){
 			if(!empty($fila["1th"])){ //Hay apuesta, se calcula la puntuacion del usuario
 				$arrayVal = array();
 				for($pos=1;$pos<12;$pos++){
-					//DEV,LEC,ALO,HAM,SAI,RUS,HUL,GAS,OCO,STR,VER
 					$key = array_search($fila[$pos."th"], $pArray);
 					if ($key !== false){
 						//echo "<br> pos: " . $pos;
@@ -144,9 +129,9 @@ function calcula($year,$sessionId,$circuitId){
 			}
 			//echo "<br> vTotal= ". $vTotal;
 			//insertar en tabla bets results
-			if(!empty($sessionId)){
-				$sqlI ="INSERT INTO betresults (userId,circuitId,sessionId,year,1th,2th,3th,4th,5th,6th,7th,8th,9th,10th,11th,total) VALUES('$userId','$circuitId','$sessionId','$year','$v1','$v2','$v3','$v4','$v5','$v6','$v7','$v8','$v9','$v10','$v11','$vTotal')";
-				//$resultadoI=$mysqli->query($sqlI);
+			if(!empty($sessionId)){//evitar insert raro
+				$sqlI ="INSERT INTO betresults (userId,circuitId,sessionId,year,1th,2th,3th,4th,5th,6th,7th,8th,9th,10th,11th,total) VALUES('$userId','$circuitId','$sessionId','$year','$v1','$v2','$v3','$v4','$v5','$v6','$v7','$v8','$v9','$v10','$v11','$vTotal') ON DUPLICATE KEY UPDATE 1th='$v1',2th='$v2',3th='$v3',4th='$v4',5th='$v5',6th='$v6',7th='$v7',8th='$v8',9th='$v9',10th='$v10',11th='$v11',total='$vTotal'";
+				$resultadoI=$mysqli->query($sqlI);
 			}
 			$vTotal=0;
 		}else {
