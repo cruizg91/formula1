@@ -48,12 +48,16 @@ function calcula($year,$sessionId,$circuitId,$p1,$p2,$p3,$p4,$p5,$p6,$p7,$p8,$p9
 	$sql= "SELECT users.userId, 1th,2th,3th,4th,5th,6th,7th,8th,9th,10th,11th,extrapoints FROM users LEFT JOIN bets ON users.userId=bets.userId and sessionId='$sessionId' and circuitId='$circuitId' and year='$year' order by userOrder ASC";
 	$resultado=$mysqli->query($sql);
 	$hayResultados =true;
+	$aciertos=0;
+	$vr=0;
+	$vrUser="";
 	while ($hayResultados==true){
 		$fila = $resultado->fetch_assoc();
+		$aciertos=0;
 		if ($fila) {			
 			$userId=$fila["userId"];
 			//echo "<br><br>usuario ".$fila["userId"];
-			if(!empty($fila["1th"])){ //Hay apuesta, se calcula la puntuacion del usuario
+			if(!empty($fila["1th"])||!empty($fila["2th"])||!empty($fila["3th"])||!empty($fila["4th"])||!empty($fila["5th"])||!empty($fila["6th"])||!empty($fila["7th"])||!empty($fila["8th"])||!empty($fila["9th"])||!empty($fila["10th"])||!empty($fila["11th"])){ //Hay apuesta, se calcula la puntuacion del usuario
 				$arrayVal = array();
 				for($pos=1;$pos<12;$pos++){
 					$key = array_search($fila[$pos."th"], $pArray);
@@ -62,12 +66,16 @@ function calcula($year,$sessionId,$circuitId,$p1,$p2,$p3,$p4,$p5,$p6,$p7,$p8,$p9
 						//echo " driver: " . $fila[$pos."th"];
 						//echo " key: " . $key;
 						if($key==$pos){
-							array_push($arrayVal, 1+0.05*$pos);
-							//echo " val: ". 1+0.05*$pos;
+							array_push($arrayVal, 1);
+							$aciertos= $aciertos + 1+0.05*$pos;
+							//echo " val: ". 1;
 						}else if($key==$pos+1 || $key==$pos-1){
 							//echo " val: 0.5";
 							array_push($arrayVal, 0.5);
 						}else if($key==$pos+2 || $key==$pos-2){
+							//echo " val: 0.25";
+							array_push($arrayVal, 0.33);
+						}else if($key==$pos+3 || $key==$pos-3){
 							//echo " val: 0.25";
 							array_push($arrayVal, 0.25);
 						}else{
@@ -81,6 +89,12 @@ function calcula($year,$sessionId,$circuitId,$p1,$p2,$p3,$p4,$p5,$p6,$p7,$p8,$p9
 							//echo " val: 0";
 						array_push($arrayVal, 0);
 					}
+				}
+				if($aciertos>$vr){
+					$vr=$aciertos;
+					$vrUser=$userId;
+				} else if($aciertos == $vr){
+					//criterio de desempate
 				}
 				$v1 = $arrayVal[0];
 				$v2 = $arrayVal[1];
@@ -141,13 +155,13 @@ function calcula($year,$sessionId,$circuitId,$p1,$p2,$p3,$p4,$p5,$p6,$p7,$p8,$p9
 	
 	//asignar puntos y posiciones
 	$arrayPuntuable = array();
-	$sql= "SELECT 1th,2th,3th,4th,5th,6th,7th,8th,9th,10th FROM points where sessionId='QUA'";
+	$sql= "SELECT 1th,2th,3th,4th,5th,6th,7th,8th,9th,10th FROM points where sessionId='".$sessionId."'";
 	//echo $sql;
 		if($resultado=$mysqli->query($sql)){
 			$fila=$resultado->fetch_assoc();
 			 array_push($arrayPuntuable, $fila["1th"], $fila["2th"], $fila["3th"], $fila["4th"], $fila["5th"], $fila["6th"], $fila["7th"], $fila["8th"], $fila["9th"], $fila["10th"]);
 		}
-	$sql = "SELECT betresults.userId,total,historychampionships.position FROM betresults INNER JOIN historychampionships ON historychampionships.userId=betresults.userId and historychampionships.year=betresults.year-1 WHERE circuitId='$circuitId' and sessionId='$sessionId' and betresults.year='$year' ORDER BY total DESC,position DESC";
+	$sql = "SELECT betresults.userId,total,historychampionships.position FROM betresults INNER JOIN driversranking ON driversranking.userId=betresults.userId LEFT JOIN historychampionships ON historychampionships.userId=betresults.userId and historychampionships.year=betresults.year-1 WHERE circuitId='$circuitId' and sessionId='$sessionId' and betresults.year='$year' ORDER BY total DESC,driversranking.points DESC,position DESC";
 	$resultado=$mysqli->query($sql);
 	//echo $sql;
 	$hayResultados=true;
@@ -168,7 +182,7 @@ function calcula($year,$sessionId,$circuitId,$p1,$p2,$p3,$p4,$p5,$p6,$p7,$p8,$p9
 			}else if($sessionId=='RAC' || $sessionId=='RAS'){//si es carrera asignar los puntos
 				$sqlI ="UPDATE betresults SET points='$arrayPuntuable[$arrPos]' WHERE userId='$userId' and circuitId='$circuitId' and sessionId='$sessionId'  and year='$year'";
 				$resultadoI=$mysqli->query($sqlI);
-			}	 
+			}	
 		}else {
 			$hayResultados = false;
 		}
