@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <title>F1 Experts</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,6 +15,18 @@
     }
 </script>
   <style>
+  @media screen and (min-width: 320px) and (max-width: 767px) and (orientation: portrait) {
+  html {
+    transform: rotate(-90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    overflow-x: hidden;
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
+}
   @font-face { font-family: Formula1 Display Regular; src: url('Formula1-Regular.ttf'); } 
   	body {
 		font-family: Formula1 Display Regular;
@@ -105,18 +118,31 @@ while ($hayResultados==true){
 }
 $circuitId=$_SESSION['circuitId'];		
 	
-function seleccionaColor($puntos,$isHeader)
+function seleccionaColor($puntos,$sessionId,$isHeader)
 {
     if(!$isHeader){
-		if($puntos==2.25 || $puntos > 25){
-			return "#D9BE4C";
-		} else if($puntos==2 || $puntos > 18){
-			return "#D0D2D7";
-		} else if($puntos==1.75 || $puntos > 15){
-			return "#C07A50";
-		} else{
-			return "#FFF4BC";	
+		if($sessionId=="QUA" ||$sessionId=="QUS"){
+			if($puntos==2.25){
+				return "#D9BE4C";
+			} else if($puntos==2){
+				return "#D0D2D7";
+			} else if($puntos==1.75){
+				return "#C07A50";
+			} else{
+				return "#FFF4BC";	
+			}
+		} else if($sessionId=="RAC" ||$sessionId=="RAS"){
+			if( $puntos >= 25){
+				return "#D9BE4C";
+			} else if($puntos >= 18){
+				return "#D0D2D7";
+			} else if($puntos >= 15){
+				return "#C07A50";
+			} else{
+				return "#FFF4BC";	
+			}
 		}
+		
 	}else{
 		return "AliceBlue";	
 	}
@@ -161,7 +187,7 @@ function createGridHeader($mysqli){
 	while ($hayResultados==true){
 		$fila = $resultado->fetch_assoc();
 		if($i%2==1){
-			$color = seleccionaColor(NULL,true);
+			$color = seleccionaColor(NULL,NULL,true);
 		}
 		if ($fila) { 
 			 echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;background-color:".$color.";\">". $fila["userId"] . "</div>";
@@ -189,9 +215,6 @@ function createBetRows($mysqli,$sessionId,$circuitId,$year){
 			$i=1;
 			while ($hayResultados==true){
 				$fila = $resultado->fetch_assoc();
-				if($i%2==1){
-					$color = seleccionaColor($teamId,true);
-				}				
 				if ($fila) { 
 					if($fila[$pos."th"]==null){
 						$fila[$pos."th"]="-";
@@ -210,6 +233,60 @@ function createBetRows($mysqli,$sessionId,$circuitId,$year){
 }
 function createPointsRows($mysqli,$sessionId,$circuitId,$year){
 	echo "<br>";//puntuaciones
+	echo "<div class=\"row\" name=\"".$i ."th\">";
+        echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;background-color:AliceBlue;\">Puntos</div>";
+		
+		if($sessionId=='RAC' || $sessionId=='RAS'){
+			$sql = "SELECT users.userId, total, points FROM users LEFT JOIN betresults ON betresults.userId=users.userId and sessionId='".$sessionId."' and circuitId='".$circuitId."' and year='".$year."'"." Order by userOrder ASC";
+		}else {
+			if($sessionId=='QUA'){
+				$nextSession='RAC';
+			}else{
+				$nextSession='RAS';
+			}
+			$sql = "SELECT users.userId, extrapoints as points FROM users LEFT JOIN bets ON bets.userId=users.userId and sessionId='".$nextSession."' and circuitId='".$circuitId."' and year='".$year."'"." Order by userOrder ASC";
+		}
+		
+		$resultadoT=$mysqli->query($sql);
+		$hayResultados=true;
+		while ($hayResultados==true){
+				$fila = $resultadoT->fetch_assoc();				
+				if ($fila) { 
+					if($fila[$pos."th"]==null){
+						$fila[$pos."th"]="-";
+					}
+					$color=seleccionacolor($fila["points"],$sessionId,false);
+					 echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;border-left: 1px solid;background-color:".$color."\">". $fila["points"] . "</div>";
+					 $i=$i+1;
+				}else {
+					$hayResultados = false;
+				}
+	    }
+		echo "</div>";
+		echo "<div class=\"row\" name=\"".$i ."th\">";
+        echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;background-color:AliceBlue;\">Total</div>";
+		$sql = "SELECT users.userId, total, points FROM users LEFT JOIN betresults ON betresults.userId=users.userId and betresults.sessionId='".$sessionId."' and circuitId='".$circuitId."' and year='".$year."'"." Order by userOrder ASC";
+		
+		$resultado=$mysqli->query($sql);
+		$resultadoT=$resultado;
+		$hayResultados=true;
+		$i=1;
+		while ($hayResultados==true){
+				$fila = $resultado->fetch_assoc();	
+				if($i%2==1){
+					$color = seleccionaColor($color,$sessionId, false);
+				}			
+				if ($fila) { 
+					if($fila[$pos."th"]==null){
+						$fila[$pos."th"]="-";
+					}
+					 echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;border-left: 1px solid;background-color:#FBE568;\">". $fila["total"] . "</div>";
+					 $i=$i+1;
+				}else {
+					$hayResultados = false;
+				}
+	    }
+		echo "</div>";
 	for($pos=1;$pos<12;$pos++){
 	    echo "<div class=\"row\" name=\"".$i ."th\">";
         echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;background-color:AliceBlue;\">". $pos ."º </div>";
@@ -230,64 +307,8 @@ function createPointsRows($mysqli,$sessionId,$circuitId,$year){
 	    }
 		 echo "</div>";
 	}
-	
-		echo "<div class=\"row\" name=\"".$i ."th\">";
-        echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;background-color:AliceBlue;\">Total</div>";
-		$sql = "SELECT users.userId, total, points FROM users LEFT JOIN betresults ON betresults.userId=users.userId and betresults.sessionId='".$sessionId."' and circuitId='".$circuitId."' and year='".$year."'"." Order by userOrder ASC";
-		
-		$resultado=$mysqli->query($sql);
-		$resultadoT=$resultado;
-		$hayResultados=true;
-		$i=1;
-		while ($hayResultados==true){
-				$fila = $resultado->fetch_assoc();	
-				if($i%2==1){
-					$color = seleccionaColor($color, false);
-				}			
-				if ($fila) { 
-					if($fila[$pos."th"]==null){
-						$fila[$pos."th"]="-";
-					}
-					 echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;border-left: 1px solid;background-color:#FBE568;\">". $fila["total"] . "</div>";
-					 $i=$i+1;
-				}else {
-					$hayResultados = false;
-				}
-	    }
-		echo "</div>";
-		
-				echo "<div class=\"row\" name=\"".$i ."th\">";
-        echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;background-color:AliceBlue;\">Puntos</div>";
-		
-		if($sessionId=='RAC' || $sessionId=='RAS'){
-			$sql = "SELECT users.userId, total, points FROM users LEFT JOIN betresults ON bets.userId=users.userId and sessionId='".$sessionId."' and circuitId='".$circuitId."' and year='".$year."'"." Order by userOrder ASC";
-		}else {
-			if($sessionId=='QUA'){
-				$nextSession='RAC';
-			}else{
-				$nextSession='RAS';
-			}
-			$sql = "SELECT users.userId, extrapoints as points FROM users LEFT JOIN bets ON bets.userId=users.userId and sessionId='".$nextSession."' and circuitId='".$circuitId."' and year='".$year."'"." Order by userOrder ASC";
-		}
-		
-		$resultadoT=$mysqli->query($sql);
-		$hayResultados=true;
-		while ($hayResultados==true){
-				$fila = $resultadoT->fetch_assoc();				
-				if ($fila) { 
-					if($fila[$pos."th"]==null){
-						$fila[$pos."th"]="-";
-					}
-					$color=seleccionacolor($fila["points"],false);
-					 echo "<div class=\"col-xs-1\" style=\"font-family: Formula1 Display Regular;border-top: 1px solid;border-left: 1px solid;background-color:".$color."\">". $fila["points"] . "</div>";
-					 $i=$i+1;
-				}else {
-					$hayResultados = false;
-				}
-	    }
-		echo "</div>";
 }
-
+/*
 function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
 	echo "<div class=\"col-md-4\">";
                         echo "<div class=\"panelMiApuesta\">";
@@ -318,7 +339,7 @@ function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
                         echo "</div>";
                       echo "</div>";
 	
-}
+}*/
 
 //FIN FUNCIONES
 	
@@ -349,7 +370,6 @@ function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
 <nav class="navbar navbar-inverse">
   <div class="container-fluid">    
     <ul class="nav navbar-nav">
-      <li class="active"><a href="#">Simulación</a></li>
       <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Apuestas <span class="caret"></span></a>
         <ul class="dropdown-menu">
           <li><a data-toggle="tab" href="#ApuestaClasificacion">Clasificación</a></li>
@@ -382,16 +402,16 @@ function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
 	<!-- Capa Apuesta Clasificacion -->
   	<?php
 	if($_SESSION['currentTab']=='QUA'){
-    	echo "<div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade in active\" id=\"ApuestaClasificacion\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+    	echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade in active\" id=\"ApuestaClasificacion\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
 	}else{
-		echo "<div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade\" id=\"ApuestaClasificacion\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+		echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade\" id=\"ApuestaClasificacion\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
 	}
 	?>
             <h3 style="font-size: 40px; color: white; font-weight: bold; text-align: center;" >Clasificación</h3><br>
                 <!-- Panel Apuesta-->
             <div class="container-fluid" style="width:100%;">    
                  <div class="row">
-                     <div class="col-md-4">
+                     <div class="col-md-3">
                         <div class="panelMiApuesta">
                                       <h3 style="font-weight: bold;" >Mi Apuesta</h3><br>
                                       <form id="form1" name="form1" method="post"> 
@@ -438,9 +458,9 @@ function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
     <!-- Capa Apuesta Carreras-->              
   	<?php
 	if($_SESSION['currentTab']=='RAC'){
-    	echo "<div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade in active\" id=\"ApuestaCarrera\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+    	echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade in active\" id=\"ApuestaCarrera\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
 	}else{
-		echo "<div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade\" id=\"ApuestaCarrera\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+		echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade\" id=\"ApuestaCarrera\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
 	}
 	?>
             <h3 style="font-size: 40px; color:white; font-weight: bold; text-align: center;" >Carrera</h3><br>
@@ -491,7 +511,13 @@ function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
           </div>
      </div>
     <!-- Capa Apuesta Clasificacion Sprint -->
-	<div color:#2EFEC8;font-weight: bold;font-size: 20px;" class="tab-pane fade" id="ApuestaClasificacionSprint" role="tabpanel" aria-labelledby="nav-home-tab"> 
+    <?php
+	if($_SESSION['currentTab']=='RAC'){
+    	echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade in active\" id=\"ApuestaClasificacionSprint\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+	}else{
+		echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade\" id=\"ApuestaClasificacionSprint\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+	}
+	?>
             <h3 style="font-size: 40px; color: white; font-weight: bold; text-align: center;" >Carrera Sprint</h3><br>
                 <!-- Panel Apuesta-->
             <div class="container-fluid" style="width:100%;">    
@@ -544,7 +570,13 @@ function crearPanelMiApuesta($year,$circuitId,$sessionId,$isClosed){
 <div class="tab-content" id="nav-tabContent">
 
 	<!-- Capa Apuesta Clasificacion -->
-  	<div color:#2EFEC8;font-weight: bold;font-size: 20px;" class="tab-pane fade" id="ApuestaClasificacion" role="tabpanel" aria-labelledby="nav-home-tab"> 
+    <?php
+	if($_SESSION['currentTab']=='RAC'){
+    	echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade in active\" id=\"ApuestaClasificacion\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+	}else{
+		echo "<br><div color:#2EFEC8;font-weight: bold;font-size: 20px; class=\"tab-pane fade\" id=\"ApuestaClasificacion\" role=\"tabpanel\" aria-labelledby=\"nav-home-tab\"> ";
+	}
+	?> 
             <h3 style="font-size: 40px; font-weight: bold; text-align: center;" >Clasificación Sprint</h3><br>
                 <!-- Panel Apuesta-->
             <div class="container-fluid" style="width:100%;">    
