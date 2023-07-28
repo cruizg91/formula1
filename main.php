@@ -18,11 +18,12 @@
   @media screen and (min-width: 320px) and (max-width: 767px) and (orientation: portrait) {
   html {
     transform: rotate(-90deg);
-    transform-origin: left top;
+    transform-origin: left bottom;
     width: 100vh;
     height: 100vw;
     overflow-x: hidden;
-    position: absolute;
+    position: absolute;	
+	background-image: url(asfalto.jpg);
     top: 100%;
     left: 0;
   }
@@ -69,8 +70,9 @@
 
 error_reporting(0);
 $mysqli= new mysqli('localhost','root','','formula1');
-//$conexion= mysql_connect('mysql.hostinger.es','u640557691_46','schumi46')or die ('Ha fallado la conexión: '.mysql_error());
-//mysql_select_db('u640557691_46')or die ('Error al seleccionar la Base de Datos: '.mysql_error());
+//$mysqli= new mysqli('localhost','id20700082_root',']$[(st|j976@rfmL','id20700082_formula1');
+//$conexion= mysql_connect('mysql.hostinger.es','id20700082_root',']$[(st|j976@rfmL')or die ('Ha fallado la conexión: '.mysql_error());
+//mysql_select_db('id20700082_formula1')or die ('Error al seleccionar la Base de Datos: '.mysql_error());
  
 $usuario= $_SESSION['usuario'];
 
